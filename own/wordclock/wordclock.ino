@@ -3,7 +3,7 @@
 #define WIFISSID ""
 #define WIFIPW ""
 
-#define DEBUGLEVEL 2 //set 0 for no Serial Messages
+#define DEBUGLEVEL 1 //set 0 for no Serial Messages
 
 #define LED_NUMBER 110
 #define WORD_NUMBER 22
@@ -19,12 +19,12 @@
 
 /* Configuration of NTP */
 #define NTP_SERVER1 "de.pool.ntp.org" //Allgemeiner NTP Server
-#define NTP_SERVER2 "192.168.178.1" //fritz box NTP Server
+#define NTP_SERVER2 "de.pool.ntp.org" //fritz box NTP Server 192.168.178.1
 #define TZ "CET-1CEST,M3.5.0/2:00,M10.5.0/3:00" //Sommer Winter Zeit
 
 /* Update Intervals */
 #define INTERVAL_UPDATETIME 1000
-#define INTERVAL_PRINTTIME 1000
+#define INTERVAL_PRINTTIME 1000*60
 #define INTERVAL_UPDATENTP 1000*60*10 //Millisekunden wie oft NTP Anfrage gestellt werden soll
 #define INTERVAL_UPDATEWORDS 1000
 #define INTERVAL_UPDATEPIXELS 10
@@ -56,7 +56,7 @@ uint8_t curWordsValue[WORD_NUMBER];
 uint8_t tarWordsStatus[WORD_NUMBER];
 
 uint8_t tarWordsValue = 50; //Helligkeit (muss >= 25 sein damit LEDs überhaupt leuchten)
-uint8_t tarWordsSaturation = 0; //set 0 for white, 255 for color
+uint8_t tarWordsSaturation = 70; //set 0 for white, 255 for color
 uint16_t tarWordsHue = 10922; //Farbwert
 /* Rot: 0
  * Gelb: 10922
@@ -137,6 +137,7 @@ void loop() {
   updatePixels();
   //updateValueFromAnalogInput();
   //circleHue();
+  delay(1);
 }
 
 void circleHue() {
@@ -207,7 +208,7 @@ void resetWords(uint8_t *words) {
 
 // Diese Funktion wird als Rückruf festgelegt, wenn Zeitdaten abgerufen wurden.
 void time_is_set() { 
-  if (DEBUGLEVEL > 0) Serial.println("NTP Server Timestap Synchronisation");
+  if (DEBUGLEVEL > 0) Serial.println("NTP Server Timestamp Synchronisation");
   //sntp_real_timestamp = 0;
 }
 
@@ -228,7 +229,7 @@ void updateTime() {
 }
 
 void printTime() {
-  if (DEBUGLEVEL <= 1) {
+  if (DEBUGLEVEL <= 0) {
     return;
   }
   unsigned long currentMillis = millis();
