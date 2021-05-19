@@ -1,0 +1,8 @@
+  ets Jan  8 2013,rst cause:4, boot mode:(3,6)
+ wdt reset
+ load 0x4010f000, len 3584, room 16 
+ tail 0
+ chksum 0xb0
+ csum 0xb0
+ v2843a5ac
+ ~ld
