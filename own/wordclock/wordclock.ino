@@ -1,17 +1,34 @@
 
-
 #define WIFISSID ""
 #define WIFIPW ""
 
-#define DEBUGLEVEL 1 //set 0 for no Serial Messages
+#define DEBUGLEVEL 0 //set 0 for no Serial Messages
+
+#define USE_ANALOG_INPUT 0 //1=on, 0=off
+#define COLORMODE 4
+/*
+ * Color is described by Hue(16 Bit) and Saturation(8 Bit). 
+ * Use tarValue below for fix Value or activate USE_ANALOG_INPUT;
+ * Use INTERVAL_CIRCLECOLOR for interval the color change (ms)
+ * 
+ * Colormode 0: all Words have the same Color all the Time, hue/saturation index from circleColorIndex below
+ * Colormode 1: all Words have the same Color, but Color is changing with time
+ * Colormode 2: all Words have the same Color, but Color is changing with day of week, 
+ *              hue/saturation index 1-7, starting with sunday
+ * Colormode 3: all Words have different Colors, without changing by time
+ * Colormode 4: all Words have different Colors, changing by time
+ */
 
 #define LED_NUMBER 110
-#define WORD_NUMBER 22
+#define WORD_NUMBER 23
+#define COLOR_NUMBER 9 //>=9
 
-#define HUE_STEP 100
+#define HUE_STEP 200
+#define SATURATION_STEP 1
 #define VALUE_STEP 1
-#define VALUE_MULTIPLIER 0.5
-#define VALUE_OFFSET 128
+
+#define VALUE_MULTIPLIER 1
+#define VALUE_OFFSET 0
 
 /* Configuration of Pins */
 #define PIN_LED D6
@@ -21,15 +38,36 @@
 #define NTP_SERVER1 "de.pool.ntp.org" //Allgemeiner NTP Server
 #define NTP_SERVER2 "de.pool.ntp.org" //fritz box NTP Server 192.168.178.1
 #define TZ "CET-1CEST,M3.5.0/2:00,M10.5.0/3:00" //Sommer Winter Zeit
+#define DEBUGTIMESTAMP 1621177200
+#define DEBUGTIMESTAMPACTIVATE 0
 
 /* Update Intervals */
-#define INTERVAL_UPDATETIME 1000
-#define INTERVAL_PRINTTIME 1000*60
 #define INTERVAL_UPDATENTP 1000*60*10 //Millisekunden wie oft NTP Anfrage gestellt werden soll
-#define INTERVAL_UPDATEWORDS 1000
-#define INTERVAL_UPDATEPIXELS 10
+
 #define INTERVAL_UPDATEVALUEFROMANALOGINPUT 1000
-#define INTERVAL_CIRCLEHUE 100
+#define INTERVAL_CIRCLECOLOR 1000*60*30
+
+#define INTERVAL_UPDATETIME 1000
+#define INTERVAL_PRINTTIME 1000
+#define INTERVAL_UPDATEWORDSTATUS 1000
+
+#define INTERVAL_UPDATEWORDVALUE 10
+#define INTERVAL_UPDATEWORDCOLOR 10
+#define INTERVAL_UPDATEWORDPIXELS 10
+
+// Indexes for special words
+#define ES 12
+#define IST 13
+#define FUENF 14
+#define ZEHN 15
+#define VIERTEL 16
+#define ZWANZIG 17
+#define HALB 18
+#define NACH 19
+#define VOR 20
+#define UHR 21
+#define EIN 22
+#define EINS 0
 
 /* Includes */
 #include <ESP8266WiFi.h>
@@ -37,34 +75,49 @@
 #include <coredecls.h>
 #include <Adafruit_NeoPixel.h>
 
+/* Structs */
+typedef struct Word
+{
+  uint8_t needUpdate = 0;
+  uint8_t address;
+  uint8_t wordLength;
+  uint16_t tarHue = 0;
+  uint16_t curHue = 0;
+  uint8_t tarSaturation = 0;
+  uint8_t curSaturation = 0;
+  uint8_t tarStatus = 0;
+  uint8_t curValue = 0;
+} Word;
+
 /* Globals */
 
 // previousMillis (pm)
 unsigned long pm_updateTime = 0;
 unsigned long pm_printTime = 0;
-unsigned long pm_updateWords = 0;
-unsigned long pm_updatePixels = 0;
+unsigned long pm_updateWordStatus = 0;
+unsigned long pm_updateWordPixels = 0;
+unsigned long pm_updateWordValue = 0;
 unsigned long pm_updateValueFromAnalogInput = 0;
-unsigned long pm_circleHue = 0;
+unsigned long pm_circleColor = 0;
+unsigned long pm_updateWordColor = 0;
 
-// Struct for Time with hour minute seconds etc.
-tm tm;
+uint8_t firstFlow = 1;
+
+tm tm; // stores Date and Time in human way
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(LED_NUMBER, PIN_LED, NEO_GRB + NEO_KHZ800);
 
-uint8_t curWordsValue[WORD_NUMBER];
-uint8_t tarWordsStatus[WORD_NUMBER];
+Word words[WORD_NUMBER];
 
-uint8_t tarWordsValue = 50; //Helligkeit (muss >= 25 sein damit LEDs überhaupt leuchten)
-uint8_t tarWordsSaturation = 70; //set 0 for white, 255 for color
-uint16_t tarWordsHue = 10922; //Farbwert
-/* Rot: 0
- * Gelb: 10922
- * Grün: 21845
- * Türkis: 32768
- * Blau: 43690
- * Violett: 54613
- */
+uint8_t tarValue = 150;
+uint8_t circleColorIndex = 0;
+
+const uint16_t hues[COLOR_NUMBER] = {
+  10922, 0, 6900, 10923, 21845, 32768, 43691, 49971, 54613
+};
+const uint8_t saturations[COLOR_NUMBER] = {
+  70, 255, 255, 255, 255, 255, 255, 255, 115
+};
 
 // first digit=number of first led
 // second digit=word length
@@ -90,20 +143,9 @@ const uint8_t addresses[WORD_NUMBER][2] = {
   {44, 4},  //Halb    18
   {38, 4},  //Nach    19
   {35, 3},  //Vor     20
-  {99, 3}   //Uhr     21
+  {99, 3},  //Uhr     21
+  {60, 3}   //Ein     22
 };
-
-// Indexes for words
-#define ES 12
-#define IST 13
-#define FUENF 14
-#define ZEHN 15
-#define VIERTEL 16
-#define ZWANZIG 17
-#define HALB 18
-#define NACH 19
-#define VOR 20
-#define UHR 21
 
 void setup() {
   if (DEBUGLEVEL > 0) Serial.begin(115200);
@@ -111,232 +153,31 @@ void setup() {
   pixels.begin();
   pixels.clear();
   pixels.show();
-  
-  // start network
-  WiFi.persistent(false);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFISSID, WIFIPW);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(200);
-    if (DEBUGLEVEL > 0) Serial.print(".");
-  }
-  if (DEBUGLEVEL > 0) Serial.println("\nWiFi connected");
 
+  startNetwork();
   configTime(TZ, NTP_SERVER1, NTP_SERVER2);
-  if (DEBUGLEVEL > 0) settimeofday_cb(time_is_set);
+  settimeofday_cb(time_is_set);
+  if (DEBUGTIMESTAMPACTIVATE) sntp_real_timestamp = DEBUGTIMESTAMP;
   
-  resetWords(curWordsValue);
-  resetWords(tarWordsStatus);
-  //sntp_real_timestamp = 0;
+  setWordAddresses();
+
+  if (COLORMODE == 0) setWordSameColors();
+  if (COLORMODE == 3) setWordDifferentColors();
 }
 
 void loop() {
   updateTime();
   printTime();
-  updateWords();
-  updatePixels();
-  //updateValueFromAnalogInput();
-  //circleHue();
+  updateWordStatus();
+  
+  if (USE_ANALOG_INPUT) updateValueFromAnalogInput();
+  updateColor();
+  
+  updateWordValue();
+  updateWordColor();
+  updateWordPixels();
+  
   delay(1);
-}
-
-void circleHue() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_circleHue <= INTERVAL_CIRCLEHUE) {
-    return;
-  }
-  pm_circleHue = currentMillis;
-
-  tarWordsHue += HUE_STEP;
-}
-
-void updateValueFromAnalogInput() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_updateValueFromAnalogInput <= INTERVAL_UPDATEVALUEFROMANALOGINPUT) {
-    return;
-  }
-  pm_updateValueFromAnalogInput = currentMillis;
-  
-  int32_t a0 = analogRead(A0); //liefert Werte von 1-1024
-  a0 -= 1;
-  a0 = VALUE_MULTIPLIER * a0 + VALUE_OFFSET;
-  a0 /= 4;
-  if (a0 < 0) a0 = 0;
-  if (a0 > 255) a0 = 255;
-  tarWordsValue = a0; //akzeptiert Werte von 0-255
-}
-
-void updatePixels() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_updatePixels <= INTERVAL_UPDATEPIXELS) {
-    return;
-  }
-  pm_updatePixels = currentMillis;
-  
-  for (uint8_t i = 0; i < WORD_NUMBER; i++) {
-    uint8_t newcolor = 0;
-    if (curWordsValue[i] < tarWordsStatus[i]*tarWordsValue) {
-      if (curWordsValue[i] - VALUE_STEP > tarWordsStatus[i]*tarWordsValue) {
-        curWordsValue[i] = tarWordsStatus[i]*tarWordsValue;
-      } else {
-        curWordsValue[i] += VALUE_STEP;
-      }
-      newcolor = 1;
-    }
-    if (curWordsValue[i] > tarWordsStatus[i]*tarWordsValue) {
-      if (curWordsValue[i] - VALUE_STEP < tarWordsStatus[i]*tarWordsValue) {
-        curWordsValue[i] = tarWordsStatus[i]*tarWordsValue;
-      } else {
-        curWordsValue[i] -= VALUE_STEP;
-      }
-      newcolor = 1;
-    }
-    if (newcolor) {
-      uint32_t rgbcolor = pixels.gamma32(pixels.ColorHSV(tarWordsHue, tarWordsSaturation, curWordsValue[i]));
-      pixels.fill(rgbcolor, addresses[i][0], addresses[i][1]);
-      if (DEBUGLEVEL > 1) Serial.println(curWordsValue[i]);
-    }
-  }
-  pixels.show();
-}
-
-void resetWords(uint8_t *words) {
-  for (uint8_t i = 0; i < WORD_NUMBER; i++) {
-    words[i] = 0;
-  }
-}
-
-// Diese Funktion wird als Rückruf festgelegt, wenn Zeitdaten abgerufen wurden.
-void time_is_set() { 
-  if (DEBUGLEVEL > 0) Serial.println("NTP Server Timestamp Synchronisation");
-  //sntp_real_timestamp = 0;
-}
-
-// SNTP-Aktualisierungsverzögerung ändern, ohne diese Funktion wird jede Stunde die Zeit geholt.
-uint32_t sntp_update_delay_MS_rfc_not_less_than_15000 () { 
-  return INTERVAL_UPDATENTP;
-}
-
-void updateTime() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_updateTime <= INTERVAL_UPDATETIME) {
-    return;
-  }
-  pm_updateTime = currentMillis;
-
-  time_t now = time(nullptr); // read the current time
-  localtime_r(&now, &tm); // update the structure tm with the current time
-}
-
-void printTime() {
-  if (DEBUGLEVEL <= 0) {
-    return;
-  }
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_printTime <= INTERVAL_PRINTTIME) {
-    return;
-  }
-  pm_printTime = currentMillis;
-
-  Serial.print("year:");
-  Serial.print(tm.tm_year + 1900);  // years since 1900
-  Serial.print("  month:");
-  Serial.print(tm.tm_mon + 1);      // January = 0 (!)
-  Serial.print("  day:");
-  Serial.print(tm.tm_mday);         // day of month
-  Serial.print("  hour:");
-  Serial.print(tm.tm_hour);         // hours since midnight  0-23
-  Serial.print("  min:");
-  Serial.print(tm.tm_min);          // minutes after the hour  0-59
-  Serial.print("  sec:");
-  Serial.print(tm.tm_sec);          // seconds after the minute  0-61*
-  Serial.print("  wday");
-  Serial.print(tm.tm_wday);         // days since Sunday 0-6
-  if (tm.tm_isdst == 1)             // Daylight Saving Time flag
-    Serial.print("  DST");
-  else
-    Serial.print("  standard");
-  Serial.println();
-}
-
-void updateWords() {
-  unsigned long currentMillis = millis();
-  if (currentMillis - pm_updateWords <= INTERVAL_UPDATEWORDS) {
-    return;
-  }
-  pm_updateWords = currentMillis;
-
-  resetWords(tarWordsStatus);
-  tarWordsStatus[ES] = 1;
-  tarWordsStatus[IST] = 1;
-
-  // STUNDENZAHL
-  uint8_t index_hour = tm.tm_hour;
-  if (tm.tm_min > 22 || tm.tm_min == 22 && tm.tm_sec >= 30) {
-    index_hour++;
-  }
-  if (index_hour == 0) index_hour = 12;
-  if (index_hour > 12) index_hour -= 12;
-  index_hour--;
-  tarWordsStatus[index_hour] = 1;
-
-  if ((tm.tm_min > 57 || tm.tm_min == 57 && tm.tm_sec >= 30) || (tm.tm_min < 2 || tm.tm_min == 2 && tm.tm_sec < 30)) {
-    tarWordsStatus[UHR] = 1;
-  }
-
-  if ((tm.tm_min > 2 || tm.tm_min == 2 && tm.tm_sec >= 30) && (tm.tm_min < 7 || tm.tm_min == 7 && tm.tm_sec < 30)) {
-    tarWordsStatus[FUENF] = 1;
-    tarWordsStatus[NACH] = 1;
-  }
-
-  if ((tm.tm_min > 7 || tm.tm_min == 7 && tm.tm_sec >= 30) && (tm.tm_min < 12 || tm.tm_min == 12 && tm.tm_sec < 30)) {
-    tarWordsStatus[ZEHN] = 1;
-    tarWordsStatus[NACH] = 1;
-  }
-
-  if ((tm.tm_min > 12 || tm.tm_min == 12 && tm.tm_sec >= 30) && (tm.tm_min < 17 || tm.tm_min == 17 && tm.tm_sec < 30)) {
-    tarWordsStatus[VIERTEL] = 1;
-    tarWordsStatus[NACH] = 1;
-  }
-
-  if ((tm.tm_min > 17 || tm.tm_min == 17 && tm.tm_sec >= 30) && (tm.tm_min < 22 || tm.tm_min == 22 && tm.tm_sec < 30)) {
-    tarWordsStatus[ZWANZIG] = 1;
-    tarWordsStatus[NACH] = 1;
-  }
-
-  if ((tm.tm_min > 22 || tm.tm_min == 22 && tm.tm_sec >= 30) && (tm.tm_min < 27 || tm.tm_min == 27 && tm.tm_sec < 30)) {
-    tarWordsStatus[FUENF] = 1;
-    tarWordsStatus[VOR] = 1;
-    tarWordsStatus[HALB] = 1;
-  }
-
-  if ((tm.tm_min > 27 || tm.tm_min == 27 && tm.tm_sec >= 30) && (tm.tm_min < 32 || tm.tm_min == 32 && tm.tm_sec < 30)) {
-    tarWordsStatus[HALB] = 1;
-  }
-
-  if ((tm.tm_min > 32 || tm.tm_min == 32 && tm.tm_sec >= 30) && (tm.tm_min < 37 || tm.tm_min == 37 && tm.tm_sec < 30)) {
-    tarWordsStatus[FUENF] = 1;
-    tarWordsStatus[NACH] = 1;
-    tarWordsStatus[HALB] = 1;
-  }
-
-  if ((tm.tm_min > 37 || tm.tm_min == 37 && tm.tm_sec >= 30) && (tm.tm_min < 42 || tm.tm_min == 42 && tm.tm_sec < 30)) {
-    tarWordsStatus[ZWANZIG] = 1;
-    tarWordsStatus[VOR] = 1;
-  }
-
-  if ((tm.tm_min > 42 || tm.tm_min == 42 && tm.tm_sec >= 30) && (tm.tm_min < 47 || tm.tm_min == 47 && tm.tm_sec < 30)) {
-    tarWordsStatus[VIERTEL] = 1;
-    tarWordsStatus[VOR] = 1;
-  }
-
-  if ((tm.tm_min > 47 || tm.tm_min == 47 && tm.tm_sec >= 30) && (tm.tm_min < 52 || tm.tm_min == 52 && tm.tm_sec < 30)) {
-    tarWordsStatus[ZEHN] = 1;
-    tarWordsStatus[VOR] = 1;
-  }
-
-  if ((tm.tm_min > 52 || tm.tm_min == 52 && tm.tm_sec >= 30) && (tm.tm_min < 57 || tm.tm_min == 57 && tm.tm_sec < 30)) {
-    tarWordsStatus[FUENF] = 1;
-    tarWordsStatus[VOR] = 1;
-  }
+  ESP.wdtFeed();
+  firstFlow = 0;
 }
