@@ -7,14 +7,14 @@ const int DHT_PIN = 5;
 DHT dht(PIN_DHT, DHT_TYPE);
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   dht.begin();
 }
 
 // runs over and over again
 void loop() {
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
+  uint16_t h = 10*dht.readHumidity();
+  uint16_t t = 10*dht.readTemperature();
   
   Serial.print("Temperatur: ");
   Serial.print(t);

@@ -1,3 +1,8 @@
+/*DHT SENSOR*/
+#include "DHT.h"
+#define DHT_TYPE DHT22
+#define PIN_DHT D5
+DHT dht(PIN_DHT, DHT_TYPE);
 
 #define WIFISSID "nuresp"
 #define WIFIPW "esp8266!"
@@ -150,7 +155,9 @@ const uint8_t displayMode = 0;
 
 void setup() {
   if (DEBUGLEVEL > 0) Serial.begin(115200);
-  
+
+  dht.begin();
+
   pixels.begin();
   pixels.clear();
   pixels.show();
@@ -167,17 +174,31 @@ void setup() {
 }
 
 void loop() {
-  updateTime();
-  printTime();
-  updateWordStatus();
+  switch (displayMode) {
+    case 0:
+      updateTime();
+      printTime();
+      updateWordStatus();
 
-  if (USE_ANALOG_INPUT) updateValueFromAnalogInput();
-  updateColor();
+      if (USE_ANALOG_INPUT) updateValueFromAnalogInput();
+      updateColor();
 
-  updateWordValue();
-  updateWordColor();
-  updateWordPixels();
-  
+      updateWordValue();
+      updateWordColor();
+      updateWordPixels();
+      break;
+    case 1:
+      float t = dht.readTemperature();
+      Serial.println(t);
+      showNumber(10 * t, pixels.Color(15, 10, 10));
+      delay(5000);
+      float h = dht.readHumidity();
+      Serial.println(h);
+      showNumber(10 * h, pixels.Color(10, 10, 15));
+      delay(5000);
+      
+      break;
+  }
   delay(1);
   ESP.wdtFeed();
   firstFlow = 0;
