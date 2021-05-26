@@ -1,11 +1,11 @@
 
-#define WIFISSID ""
-#define WIFIPW ""
+#define WIFISSID "nuresp"
+#define WIFIPW "esp8266!"
 
 #define DEBUGLEVEL 1 //set 0 for no Serial Messages
 
-#define USE_ANALOG_INPUT 0 //1=on, 0=off
-#define COLORMODE 0
+#define USE_ANALOG_INPUT 1 //1=on, 0=off
+#define COLORMODE 4
 /*
    Color is described by Hue(16 Bit) and Saturation(8 Bit).
    Use tarValue below for fix Value or activate USE_ANALOG_INPUT;
@@ -20,7 +20,7 @@
 */
 
 #define LED_NUMBER 110
-#define WORD_NUMBER 23
+#define WORD_NUMBER 24
 #define COLOR_NUMBER 9 //>=9
 
 #define HUE_STEP 200
@@ -66,8 +66,11 @@
 #define NACH 19
 #define VOR 20
 #define UHR 21
+#define N 0
+#define ZW 1 
+#define IEBEN 6
 #define S 22
-#define EIN 0
+#define EI 23
 
 /* Includes */
 #include <NTPClient.h>
@@ -125,13 +128,13 @@ const uint8_t saturations[COLOR_NUMBER] = {
 // first digit=number of first led
 // second digit=word length
 const uint8_t addresses[WORD_NUMBER][2] = {
-  {60, 3},  //Ein     0
-  {62, 4},  //Zwei     1
+  {61, 1},  //N        0
+  {64, 2},  //ZW       1
   {67, 4},  //Drei     2
   {77, 4},  //Vier     3
   {73, 4},  //Fünf     4
   {104, 5}, //Sechs    5
-  {55, 6},  //Sieben   6
+  {55, 5},  //IEBEN    6
   {89, 4},  //Acht     7
   {81, 4},  //Neun     8
   {93, 4},  //Zehn     9
@@ -147,7 +150,8 @@ const uint8_t addresses[WORD_NUMBER][2] = {
   {38, 4},  //Nach    19
   {35, 3},  //Vor     20
   {99, 3},  //Uhr     21
-  {63, 1}   //s       22
+  {60, 1},  //S       22
+  {62, 2}   //EI      23
 };
 
 const uint8_t displayMode = 0;

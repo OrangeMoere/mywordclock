@@ -32,13 +32,24 @@ void updateWordStatus() {
   if (index_hour > 12) index_hour -= 12;
   index_hour--;
   words[index_hour].tarStatus = 1;
-  if (index_hour == EIN) {
+  if (index_hour == N) {
+    words[EI].tarStatus = 1;
+    words[EI].tarHue = words[N].tarHue;
+    words[EI].tarSaturation = words[N].tarSaturation;
+    words[S].tarStatus = 1;
+  }
+  if (index_hour == ZW) {
+    words[EI].tarStatus = 1;
+    words[EI].tarHue = words[ZW].tarHue;
+    words[EI].tarSaturation = words[ZW].tarSaturation;
+  }
+  if (index_hour == IEBEN) {
     words[S].tarStatus = 1;
   }
   
   if ((tm->tm_min > 57 || tm->tm_min == 57 && tm->tm_sec >= 30) || (tm->tm_min < 2 || tm->tm_min == 2 && tm->tm_sec < 30)) {
     words[UHR].tarStatus = 1;
-    if (index_hour == EIN) {
+    if (index_hour == N) {
       words[S].tarStatus = 0;
     }
   }
