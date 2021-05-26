@@ -37,7 +37,7 @@
 #define NTP_SERVER1 "de.pool.ntp.org" //Allgemeiner NTP Server
 #define NTP_SERVER2 "de.pool.ntp.org" //fritz box NTP Server 192.168.178.1
 #define TZ "CET-1CEST,M3.5.0/2:00,M10.5.0/3:00" //Sommer Winter Zeit
-#define DEBUGTIMESTAMP 1621681018
+#define DEBUGTIMESTAMP 1621679000
 #define DEBUGTIMESTAMPACTIVATE 0
 
 /* Update Intervals */
@@ -143,7 +143,7 @@ const uint8_t addresses[WORD_NUMBER][2] = {
   {38, 4},  //Nach    19
   {35, 3},  //Vor     20
   {99, 3},  //Uhr     21
-  {63, 1}   //Ein     22
+  {63, 1}   //s       22
 };
 
 const uint8_t displayMode = 0;
@@ -172,7 +172,7 @@ void loop() {
   updateWordStatus();
 
   if (USE_ANALOG_INPUT) updateValueFromAnalogInput();
-  updateColor();
+  if (COLORMODE != 0 && COLORMODE != 3) updateColor();
 
   updateWordValue();
   updateWordColor();

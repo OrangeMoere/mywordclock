@@ -33,8 +33,8 @@ void setWordDifferentColors() {
     words[i].tarHue = hues[(i % 2 + offset_i) % COLOR_NUMBER];
     words[i].tarSaturation = saturations[(i % 2 + offset_i) % COLOR_NUMBER];
   }
-  words[EIN].tarHue = hues[(0 + offset_i) % COLOR_NUMBER];
-  words[EIN].tarSaturation = saturations[(0 + offset_i) % COLOR_NUMBER];
+  words[S].tarHue = hues[(0 + offset_i) % COLOR_NUMBER];
+  words[S].tarSaturation = saturations[(0 + offset_i) % COLOR_NUMBER];
   words[ES].tarHue = hues[(2 + offset_i) % COLOR_NUMBER];
   words[ES].tarSaturation = saturations[(2 + offset_i) % COLOR_NUMBER];
   words[IST].tarHue = hues[(3 + offset_i) % COLOR_NUMBER];
