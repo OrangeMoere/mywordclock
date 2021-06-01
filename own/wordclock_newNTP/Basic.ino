@@ -24,8 +24,8 @@ void updateWordStatus() {
   words[ES].tarStatus = 1;
   words[IST].tarStatus = 1;
 
-  uint8_t index_hour = tm->tm_hour;
-  if (tm->tm_min > 22 || tm->tm_min == 22 && tm->tm_sec >= 30) {
+  uint8_t index_hour = timeClient.getHours();
+  if (timeClient.getMinutes() > 22 || timeClient.getMinutes() == 22 && timeClient.getMinutes() >= 30) {
     index_hour++;
   }
   if (index_hour == 0) index_hour = 12;
@@ -47,65 +47,65 @@ void updateWordStatus() {
     words[S].tarStatus = 1;
   }
   
-  if ((tm->tm_min > 57 || tm->tm_min == 57 && tm->tm_sec >= 30) || (tm->tm_min < 2 || tm->tm_min == 2 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 57 || timeClient.getMinutes() == 57 && timeClient.getSeconds() >= 30) || (timeClient.getMinutes() < 2 || timeClient.getMinutes() == 2 && timeClient.getSeconds() < 30)) {
     words[UHR].tarStatus = 1;
     if (index_hour == N) {
       words[S].tarStatus = 0;
     }
   }
 
-  if ((tm->tm_min > 2 || tm->tm_min == 2 && tm->tm_sec >= 30) && (tm->tm_min < 7 || tm->tm_min == 7 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 2 || timeClient.getMinutes() == 2 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 7 || timeClient.getMinutes() == 7 && timeClient.getSeconds() < 30)) {
     words[FUENF].tarStatus = 1;
     words[NACH].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 7 || tm->tm_min == 7 && tm->tm_sec >= 30) && (tm->tm_min < 12 || tm->tm_min == 12 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 7 || timeClient.getMinutes() == 7 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 12 || timeClient.getMinutes() == 12 && timeClient.getSeconds() < 30)) {
     words[ZEHN].tarStatus = 1;
     words[NACH].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 12 || tm->tm_min == 12 && tm->tm_sec >= 30) && (tm->tm_min < 17 || tm->tm_min == 17 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 12 || timeClient.getMinutes() == 12 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 17 || timeClient.getMinutes() == 17 && timeClient.getSeconds() < 30)) {
     words[VIERTEL].tarStatus = 1;
     words[NACH].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 17 || tm->tm_min == 17 && tm->tm_sec >= 30) && (tm->tm_min < 22 || tm->tm_min == 22 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 17 || timeClient.getMinutes() == 17 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 22 || timeClient.getMinutes() == 22 && timeClient.getSeconds() < 30)) {
     words[ZWANZIG].tarStatus = 1;
     words[NACH].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 22 || tm->tm_min == 22 && tm->tm_sec >= 30) && (tm->tm_min < 27 || tm->tm_min == 27 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 22 || timeClient.getMinutes() == 22 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 27 || timeClient.getMinutes() == 27 && timeClient.getSeconds() < 30)) {
     words[FUENF].tarStatus = 1;
     words[VOR].tarStatus = 1;
     words[HALB].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 27 || tm->tm_min == 27 && tm->tm_sec >= 30) && (tm->tm_min < 32 || tm->tm_min == 32 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 27 || timeClient.getMinutes() == 27 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 32 || timeClient.getMinutes() == 32 && timeClient.getSeconds() < 30)) {
     words[HALB].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 32 || tm->tm_min == 32 && tm->tm_sec >= 30) && (tm->tm_min < 37 || tm->tm_min == 37 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 32 || timeClient.getMinutes() == 32 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 37 || timeClient.getMinutes() == 37 && timeClient.getSeconds() < 30)) {
     words[FUENF].tarStatus = 1;
     words[NACH].tarStatus = 1;
     words[HALB].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 37 || tm->tm_min == 37 && tm->tm_sec >= 30) && (tm->tm_min < 42 || tm->tm_min == 42 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 37 || timeClient.getMinutes() == 37 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 42 || timeClient.getMinutes() == 42 && timeClient.getSeconds() < 30)) {
     words[ZWANZIG].tarStatus = 1;
     words[VOR].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 42 || tm->tm_min == 42 && tm->tm_sec >= 30) && (tm->tm_min < 47 || tm->tm_min == 47 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 42 || timeClient.getMinutes() == 42 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 47 || timeClient.getMinutes() == 47 && timeClient.getSeconds() < 30)) {
     words[VIERTEL].tarStatus = 1;
     words[VOR].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 47 || tm->tm_min == 47 && tm->tm_sec >= 30) && (tm->tm_min < 52 || tm->tm_min == 52 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 47 || timeClient.getMinutes() == 47 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 52 || timeClient.getMinutes() == 52 && timeClient.getSeconds() < 30)) {
     words[ZEHN].tarStatus = 1;
     words[VOR].tarStatus = 1;
   }
 
-  if ((tm->tm_min > 52 || tm->tm_min == 52 && tm->tm_sec >= 30) && (tm->tm_min < 57 || tm->tm_min == 57 && tm->tm_sec < 30)) {
+  if ((timeClient.getMinutes() > 52 || timeClient.getMinutes() == 52 && timeClient.getSeconds() >= 30) && (timeClient.getMinutes() < 57 || timeClient.getMinutes() == 57 && timeClient.getSeconds() < 30)) {
     words[FUENF].tarStatus = 1;
     words[VOR].tarStatus = 1;
   }

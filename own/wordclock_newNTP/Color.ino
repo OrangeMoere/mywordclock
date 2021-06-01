@@ -8,7 +8,7 @@ void updateColor() {
 
   if (COLORMODE == 1) setWordSameColors();
   if (COLORMODE == 2) {
-    circleColorIndex = tm->tm_wday + 1;
+    circleColorIndex = timeClient.getDay() + 1;
     setWordSameColors();
   }
   if (COLORMODE == 4) setWordDifferentColors();

@@ -19,7 +19,7 @@ void updateTime() {
   
   timeClient.update();
   unsigned long epochTime = timeClient.getEpochTime();
-  tm = gmtime ((time_t *)&epochTime);
+  //tm = gmtime ((time_t *)&epochTime);
 }
 
 void printTime() {
@@ -32,23 +32,23 @@ void printTime() {
   }
   pm_printTime = currentMillis;
 
-  Serial.print("year:");
-  Serial.print(tm->tm_year + 1900);  // years since 1900
-  Serial.print("  month:");
-  Serial.print(tm->tm_mon + 1);      // January = 0 (!)
-  Serial.print("  day:");
-  Serial.print(tm->tm_mday);         // day of month
+  //Serial.print("year:");
+  //Serial.print(tm->tm_year + 1900);  // years since 1900
+  //Serial.print("  month:");
+  //Serial.print(tm->tm_mon + 1);      // January = 0 (!)
+  //Serial.print("  day:");
+  //Serial.print(tm->tm_mday);         // day of month
   Serial.print("  hour:");
-  Serial.print(tm->tm_hour);         // hours since midnight  0-23
+  Serial.print(timeClient.getHours());         // hours since midnight  0-23
   Serial.print("  min:");
-  Serial.print(tm->tm_min);          // minutes after the hour  0-59
+  Serial.print(timeClient.getMinutes());          // minutes after the hour  0-59
   Serial.print("  sec:");
-  Serial.print(tm->tm_sec);          // seconds after the minute  0-61*
-  Serial.print("  wday");
-  Serial.print(tm->tm_wday);         // days since Sunday 0-6
-  if (tm->tm_isdst == 1)             // Daylight Saving Time flag
-    Serial.print("  DST");
-  else
-    Serial.print("  standard");
+  Serial.print(timeClient.getSeconds());          // seconds after the minute  0-61*
+  //Serial.print("  wday");
+  //Serial.print(tm->tm_wday);         // days since Sunday 0-6
+  //if (tm->tm_isdst == 1)             // Daylight Saving Time flag
+  //  Serial.print("  DST");
+  //else
+  //  Serial.print("  standard");
   Serial.println();
 }

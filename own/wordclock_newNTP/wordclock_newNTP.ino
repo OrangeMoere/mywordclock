@@ -1,8 +1,8 @@
 
-#define WIFISSID "nuresp"
-#define WIFIPW "esp8266!"
+#define WIFISSID ""
+#define WIFIPW ""
 
-#define DEBUGLEVEL 1 //set 0 for no Serial Messages
+#define DEBUGLEVEL 0 //set 0 for no Serial Messages
 
 #define USE_ANALOG_INPUT 1 //1=on, 0=off
 #define COLORMODE 4
@@ -27,7 +27,7 @@
 #define SATURATION_STEP 1
 #define VALUE_STEP 1
 
-#define VALUE_MULTIPLIER 1
+#define VALUE_MULTIPLIER 2
 #define VALUE_OFFSET 100
 
 /* Configuration of Pins */
@@ -42,10 +42,10 @@
 #define DEBUGTIMESTAMPACTIVATE 0
 
 /* Update Intervals */
-#define INTERVAL_UPDATENTP 1000*60*10 //Millisekunden wie oft NTP Anfrage gestellt werden soll
+#define INTERVAL_UPDATENTP 1000*60*60 //Millisekunden wie oft NTP Anfrage gestellt werden soll
 
 #define INTERVAL_UPDATEVALUEFROMANALOGINPUT 1000
-#define INTERVAL_CIRCLECOLOR 1000*10
+#define INTERVAL_CIRCLECOLOR 1000*1000
 
 #define INTERVAL_UPDATETIME 1000
 #define INTERVAL_PRINTTIME 1000
@@ -73,10 +73,9 @@
 #define EI 23
 
 /* Includes */
+#include <ESP8266WiFi.h>
 #include <NTPClient.h>
 #include <WiFiUdp.h>
-#include <ESP8266WiFi.h>
-#include <coredecls.h>
 #include <Adafruit_NeoPixel.h>
 
 /* Structs */
@@ -115,7 +114,7 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(LED_NUMBER, PIN_LED, NEO_GRB + NEO_
 
 Word words[WORD_NUMBER];
 
-uint8_t tarValue = 150;
+uint8_t tarValue = 200;
 uint8_t circleColorIndex = 0;
 
 const uint16_t hues[COLOR_NUMBER] = {
@@ -157,6 +156,7 @@ const uint8_t addresses[WORD_NUMBER][2] = {
 const uint8_t displayMode = 0;
 
 void setup() {
+  ESP.wdtDisable();
   if (DEBUGLEVEL > 0) Serial.begin(115200);
   
   pixels.begin();
